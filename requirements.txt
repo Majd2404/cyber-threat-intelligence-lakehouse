@@ -1,0 +1,2 @@
+# Phase 1 uses Python standard library only.
+# Spark/Delta dependencies are provided by the Databricks runtime.

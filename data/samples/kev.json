@@ -1,0 +1,9 @@
+[
+  {
+    "cveID": "CVE-2021-44228",
+    "vendorProject": "Apache",
+    "product": "Log4j2",
+    "dateAdded": "2021-12-10",
+    "knownRansomwareCampaignUse": "Known"
+  }
+]

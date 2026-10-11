@@ -1,0 +1,46 @@
+[
+  {
+    "cve": {
+      "id": "CVE-2024-3094",
+      "published": "2024-03-29T00:00:00.000",
+      "descriptions": [
+        {
+          "lang": "en",
+          "value": "Malicious code was discovered in xz Utils."
+        }
+      ],
+      "metrics": {
+        "cvssMetricV31": [
+          {
+            "cvssData": {
+              "baseScore": 10.0,
+              "baseSeverity": "CRITICAL"
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "cve": {
+      "id": "CVE-2021-44228",
+      "published": "2021-12-10T00:00:00.000",
+      "descriptions": [
+        {
+          "lang": "en",
+          "value": "Remote code execution affecting Apache Log4j."
+        }
+      ],
+      "metrics": {
+        "cvssMetricV31": [
+          {
+            "cvssData": {
+              "baseScore": 10.0,
+              "baseSeverity": "CRITICAL"
+            }
+          }
+        ]
+      }
+    }
+  }
+]
