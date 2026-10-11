@@ -1,7 +1,12 @@
-.env
-__pycache__/
-*.pyc
-.pytest_cache/
+
+# Python virtual environment
 .venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Generated pipeline data
 data/raw/
-*.egg-info/
+data/silver/
+data/gold/
