@@ -55,17 +55,43 @@ def fetch_nvd(start: str, end: str, page_size: int = 200, max_records: int = 100
 
 
 
-def fetch_nvd_by_cve_ids(cve_ids: list[str]) -> list[dict]:
-    """Retrieve NVD vulnerability details for specific CVE IDs."""
+
+def fetch_nvd_by_cve_ids(
+    cve_ids: list[str],
+    batch_size: int = 100,
+) -> list[dict]:
+    """Fetch NVD details for specific CVEs in rate-limited batches."""
+    if not 1 <= batch_size <= 100:
+        raise ValueError("batch_size must be between 1 and 100")
+
     unique_ids = sorted(set(cve_ids))
     records = []
+    delay = 0.7 if os.getenv("NVD_API_KEY") else 6.0
 
-    for cve_id in unique_ids:
-        response = fetch_json(NVD_URL, {"cveId": cve_id})
+    for offset in range(0, len(unique_ids), batch_size):
+        batch = unique_ids[offset:offset + batch_size]
+
+        response = fetch_json(
+            NVD_URL,
+            {
+                "cveIds": ",".join(batch),
+                "resultsPerPage": 2000,
+            },
+        )
+
         records.extend(response.get("vulnerabilities", []))
-        time.sleep(6 if not os.getenv("NVD_API_KEY") else 0.7)
 
-    return records
+        if offset + batch_size < len(unique_ids):
+            time.sleep(delay)
+
+    # Deduplicate by CVE ID in case the API returns repeated records.
+    by_id = {
+        item["cve"]["id"]: item
+        for item in records
+        if item.get("cve", {}).get("id")
+    }
+
+    return [by_id[cve_id] for cve_id in sorted(by_id)]
 
 
 def fetch_kev() -> list[dict]:

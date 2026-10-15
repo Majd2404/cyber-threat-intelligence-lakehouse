@@ -4,8 +4,12 @@ import argparse
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from .clients import fetch_nvd, fetch_kev, fetch_epss
-
+from .clients import (
+    fetch_nvd,
+    fetch_nvd_by_cve_ids,
+    fetch_kev,
+    fetch_epss,
+)
 ROOT = Path(__file__).resolve().parents[2]
 SAMPLES = ROOT / "data" / "samples"
 
@@ -32,15 +36,17 @@ def main(argv: list[str] | None = None) -> dict[str, int]:
     if args.mode == "sample":
         nvd, kev, epss = (load_sample(name) for name in ("nvd", "kev", "epss"))
    
+    
     else:
-        nvd = fetch_nvd(args.start, args.end, max_records=args.limit)
-        kev = fetch_kev()
+        # Keep the original date-filtered NVD dataset.
+        nvd_window = fetch_nvd(
+            args.start,
+            args.end,
+            max_records=args.limit,
+        )
 
-        nvd_ids = [
-            item["cve"]["id"]
-            for item in nvd
-            if item.get("cve", {}).get("id")
-        ]
+        # Retrieve the full current KEV catalog.
+        kev = fetch_kev()
 
         kev_ids = [
             item["cveID"]
@@ -48,9 +54,27 @@ def main(argv: list[str] | None = None) -> dict[str, int]:
             if item.get("cveID")
         ]
 
-        # Query EPSS for CVEs from both NVD and CISA KEV.
+        # Enrich KEV CVEs with NVD details.
+        nvd_kev = fetch_nvd_by_cve_ids(kev_ids)
+
+        # Merge both NVD datasets, keeping one record per CVE.
+        nvd_by_id = {}
+
+        for item in nvd_window + nvd_kev:
+            cve_id = item.get("cve", {}).get("id")
+            if cve_id:
+                nvd_by_id[cve_id] = item
+
+        nvd = [
+            nvd_by_id[cve_id]
+            for cve_id in sorted(nvd_by_id)
+        ]
+
+        # Query EPSS for all NVD and KEV CVEs.
+        nvd_ids = list(nvd_by_id)
         ids = sorted(set(nvd_ids + kev_ids))
         epss = fetch_epss(ids)
+
 
     timestamp = datetime.now(timezone.utc).isoformat()
     counts = {}
