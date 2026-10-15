@@ -31,11 +31,27 @@ def main(argv: list[str] | None = None) -> dict[str, int]:
     args = parser.parse_args(argv)
     if args.mode == "sample":
         nvd, kev, epss = (load_sample(name) for name in ("nvd", "kev", "epss"))
+   
     else:
         nvd = fetch_nvd(args.start, args.end, max_records=args.limit)
         kev = fetch_kev()
-        ids = [item["cve"]["id"] for item in nvd if "cve" in item and "id" in item["cve"]]
+
+        nvd_ids = [
+            item["cve"]["id"]
+            for item in nvd
+            if item.get("cve", {}).get("id")
+        ]
+
+        kev_ids = [
+            item["cveID"]
+            for item in kev
+            if item.get("cveID")
+        ]
+
+        # Query EPSS for CVEs from both NVD and CISA KEV.
+        ids = sorted(set(nvd_ids + kev_ids))
         epss = fetch_epss(ids)
+
     timestamp = datetime.now(timezone.utc).isoformat()
     counts = {}
     for source, items in (("nvd", nvd), ("kev", kev), ("epss", epss)):

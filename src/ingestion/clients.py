@@ -54,6 +54,20 @@ def fetch_nvd(start: str, end: str, page_size: int = 200, max_records: int = 100
     return records
 
 
+
+def fetch_nvd_by_cve_ids(cve_ids: list[str]) -> list[dict]:
+    """Retrieve NVD vulnerability details for specific CVE IDs."""
+    unique_ids = sorted(set(cve_ids))
+    records = []
+
+    for cve_id in unique_ids:
+        response = fetch_json(NVD_URL, {"cveId": cve_id})
+        records.extend(response.get("vulnerabilities", []))
+        time.sleep(6 if not os.getenv("NVD_API_KEY") else 0.7)
+
+    return records
+
+
 def fetch_kev() -> list[dict]:
     return fetch_json(KEV_URL)["vulnerabilities"]
 
