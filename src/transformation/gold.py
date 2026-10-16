@@ -53,16 +53,20 @@ def build_gold(input_dir: Path, output_dir: Path) -> dict[str, int]:
         cvss = parse_score(nvd.get("cvss_score"))
         epss_score = parse_score(epss.get("epss_score"))
 
-        # A simple, explainable prioritization rule.
-        if cve_id in kev_by_cve:
+        # Explainable priority model:
+        # CVSS determines technical severity; KEV and EPSS influence priority.
+        is_known_exploited = cve_id in kev_by_cve
+
+        if cvss is not None and cvss >= 9.0:
             priority = "CRITICAL"
-        elif epss_score is not None and epss_score >= 0.5:
-            priority = "HIGH"
-        elif cvss is not None and cvss >= 9.0:
+        elif (
+            is_known_exploited
+            or (epss_score is not None and epss_score >= 0.5)
+        ):
             priority = "HIGH"
         elif (
-            (epss_score is not None and epss_score >= 0.1)
-            or (cvss is not None and cvss >= 7.0)
+            (cvss is not None and cvss >= 7.0)
+            or (epss_score is not None and epss_score >= 0.1)
         ):
             priority = "MEDIUM"
         else:

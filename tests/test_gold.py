@@ -177,9 +177,38 @@ class TestGoldTransformation(unittest.TestCase):
         build_gold(self.input_dir, self.output_dir)
         records = {r["cve_id"]: r["priority"] for r in self.read_gold()}
 
-        self.assertEqual(records["CVE-2025-1007"], "HIGH")
+        self.assertEqual(records["CVE-2025-1007"], "CRITICAL")
         self.assertEqual(records["CVE-2025-1008"], "MEDIUM")
         self.assertEqual(records["CVE-2025-1009"], "HIGH")
+
+
+
+
+    def test_kev_increases_priority_without_changing_cvss_severity(self):
+        self.write_jsonl("nvd.jsonl", [{
+            "cve_id": "CVE-2025-1010",
+            "cvss_score": 5.5,
+            "severity": "MEDIUM",
+        }])
+        self.write_jsonl("kev.jsonl", [{
+            "cve_id": "CVE-2025-1010",
+            "vendor": "Example",
+        }])
+        self.write_jsonl("epss.jsonl", [{
+            "cve_id": "CVE-2025-1010",
+            "epss_score": 0.02,
+            "epss_percentile": 0.2,
+            "score_date": "2025-01-01",
+        }])
+
+        build_gold(self.input_dir, self.output_dir)
+        record = self.read_gold()[0]
+
+        self.assertEqual(record["severity"], "MEDIUM")
+        self.assertEqual(record["cvss_score"], 5.5)
+        self.assertEqual(record["priority"], "HIGH")
+        self.assertTrue(record["is_known_exploited"])
+
 
 
 if __name__ == "__main__":
